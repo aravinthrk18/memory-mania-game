@@ -2,157 +2,200 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import a friendly, rounded font for the game */
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
 
+/* ========================================
+   COLOR THEME & DESIGN TOKENS
+   ======================================== */
 @layer base {
   :root {
+    /* Main colors */
     --background: 220 60% 12%;
     --foreground: 210 40% 98%;
 
+    /* Card colors */
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
 
+    /* Popover */
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
+    /* Primary accent (teal) */
     --primary: 173 80% 40%;
     --primary-foreground: 210 40% 98%;
 
+    /* Secondary accent (purple) */
     --secondary: 260 70% 60%;
     --secondary-foreground: 210 40% 98%;
 
+    /* Muted colors for less important elements */
     --muted: 220 40% 20%;
     --muted-foreground: 215 20% 65%;
 
+    /* Yellow accent */
     --accent: 45 100% 60%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
+    /* Success (green) for matched cards */
     --success: 142 76% 45%;
     --success-foreground: 210 40% 98%;
 
+    /* Error (red) */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Borders and inputs */
     --border: 220 30% 25%;
     --input: 220 30% 25%;
     --ring: 173 80% 40%;
 
+    /* Border radius */
     --radius: 1rem;
 
-    /* Game-specific tokens */
+    /* Game-specific colors */
     --card-back: 220 50% 25%;
     --card-back-pattern: 220 50% 30%;
-    --game-gradient-start: 173 80% 35%;
-    --game-gradient-end: 260 70% 45%;
-  }
-
-  .dark {
-    --background: 220 60% 12%;
-    --foreground: 210 40% 98%;
   }
 }
 
+/* ========================================
+   GLOBAL STYLES
+   ======================================== */
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground font-game antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Fredoka', sans-serif;
+    /* Nice gradient background */
     background: linear-gradient(
       135deg,
-      hsl(var(--game-gradient-start)) 0%,
-      hsl(var(--game-gradient-end)) 100%
+      hsl(173 80% 35%) 0%,
+      hsl(260 70% 45%) 100%
     );
     min-height: 100vh;
   }
 }
 
+/* ========================================
+   GAME CARD STYLES
+   ======================================== */
 @layer components {
+  /* Main card container */
   .game-card {
     @apply relative cursor-pointer select-none;
     perspective: 1000px;
     transition: transform 0.15s ease;
   }
 
+  /* Hover effect - card lifts up slightly */
   .game-card:hover:not(.flipped):not(.matched) {
     transform: scale(1.05);
   }
 
+  /* Click effect - card presses down */
   .game-card:active:not(.flipped):not(.matched) {
     transform: scale(0.98);
   }
 
+  /* Inner container that actually flips */
   .card-inner {
     @apply relative w-full h-full;
     transform-style: preserve-3d;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s ease;
   }
 
+  /* When card is flipped, rotate it 180 degrees */
   .game-card.flipped .card-inner,
   .game-card.matched .card-inner {
     transform: rotateY(180deg);
   }
 
+  /* Both faces of the card */
   .card-face {
-    @apply absolute inset-0 rounded-2xl flex items-center justify-center;
+    @apply absolute inset-0 rounded-xl flex items-center justify-center;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
 
+  /* Front face (face down - shows "?") */
   .card-front {
-    @apply bg-gradient-to-br shadow-xl;
+    @apply shadow-lg;
     background: linear-gradient(
       135deg,
       hsl(var(--card-back)) 0%,
       hsl(var(--card-back-pattern)) 100%
     );
-    border: 3px solid hsl(var(--border));
+    border: 2px solid hsl(var(--border));
   }
 
+  /* Question mark on front of card */
   .card-front::before {
     content: '?';
-    @apply text-4xl font-bold text-muted-foreground opacity-40;
+    @apply text-3xl font-bold text-muted-foreground opacity-50;
   }
 
+  /* Back face (shows the emoji) */
   .card-back {
-    @apply bg-card shadow-xl border-4;
+    @apply bg-card shadow-lg;
     transform: rotateY(180deg);
-    border-color: hsl(var(--primary) / 0.3);
+    border: 3px solid hsl(var(--primary) / 0.4);
   }
 
+  /* Matched cards get a green glow */
   .game-card.matched .card-back {
     border-color: hsl(var(--success));
-    box-shadow: 0 0 20px hsl(var(--success) / 0.4);
+    box-shadow: 0 0 15px hsl(var(--success) / 0.5);
   }
 
+  /* Shake animation for mismatched cards */
+  .game-card.shake {
+    animation: shake 0.5s ease;
+  }
+
+  /* ========================================
+     DIFFICULTY BUTTONS
+     ======================================== */
   .difficulty-btn {
-    @apply px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300;
-    @apply hover:scale-105 hover:-translate-y-1;
-    @apply active:scale-95;
-    @apply shadow-lg;
+    @apply px-6 py-4 rounded-xl font-bold text-lg transition-all duration-200;
+    @apply hover:scale-105 active:scale-95;
+    @apply shadow-md;
+    min-width: 140px;
   }
 
+  /* Easy - green */
   .difficulty-easy {
     @apply bg-gradient-to-r from-emerald-500 to-green-400 text-white;
-    box-shadow: 0 8px 24px hsl(142 76% 45% / 0.4);
+    box-shadow: 0 4px 15px hsl(142 76% 45% / 0.4);
   }
 
+  /* Medium - yellow/orange */
   .difficulty-medium {
     @apply bg-gradient-to-r from-amber-500 to-yellow-400 text-white;
-    box-shadow: 0 8px 24px hsl(45 100% 50% / 0.4);
+    box-shadow: 0 4px 15px hsl(45 100% 50% / 0.4);
   }
 
+  /* Hard - red/pink */
   .difficulty-hard {
     @apply bg-gradient-to-r from-rose-500 to-pink-400 text-white;
-    box-shadow: 0 8px 24px hsl(350 80% 55% / 0.4);
+    box-shadow: 0 4px 15px hsl(350 80% 55% / 0.4);
   }
 
+  /* ========================================
+     STATS BAR
+     ======================================== */
   .stats-card {
-    @apply bg-muted/50 backdrop-blur-sm rounded-2xl px-6 py-3;
+    @apply bg-muted/50 backdrop-blur-sm rounded-xl px-4 py-2;
     @apply border border-border/50;
   }
 
+  /* ========================================
+     WIN MODAL
+     ======================================== */
   .win-modal {
     @apply fixed inset-0 flex items-center justify-center z-50;
     @apply bg-background/80 backdrop-blur-md;
@@ -160,53 +203,47 @@
   }
 
   .win-content {
-    @apply bg-card rounded-3xl p-8 text-center shadow-2xl;
+    @apply bg-card rounded-2xl p-6 text-center shadow-xl;
     @apply border-4 border-success;
-    animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: bounceIn 0.4s ease;
   }
 
+  /* Restart button styling */
   .restart-btn {
-    @apply px-8 py-4 rounded-2xl font-bold text-lg;
+    @apply px-6 py-3 rounded-xl font-bold text-base;
     @apply bg-gradient-to-r from-primary to-secondary text-primary-foreground;
     @apply hover:scale-105 active:scale-95 transition-transform;
-    box-shadow: 0 8px 24px hsl(var(--primary) / 0.4);
+    box-shadow: 0 4px 15px hsl(var(--primary) / 0.4);
   }
 }
 
-@layer utilities {
-  .font-game {
-    font-family: 'Fredoka', sans-serif;
-  }
+/* ========================================
+   ANIMATIONS
+   ======================================== */
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      135deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--secondary)) 100%
-    );
-  }
+/* Shake animation for wrong matches */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
 }
 
+/* Fade in animation */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Bounce in for win modal */
 @keyframes bounceIn {
   0% {
     opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    transform: scale(1.05);
+    transform: scale(0.5);
   }
   70% {
-    transform: scale(0.95);
+    transform: scale(1.05);
   }
   100% {
     opacity: 1;
@@ -214,6 +251,7 @@
   }
 }
 
+/* Confetti falling animation */
 @keyframes confetti {
   0% {
     transform: translateY(0) rotate(0deg);
