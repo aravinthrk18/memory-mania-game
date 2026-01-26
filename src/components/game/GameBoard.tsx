@@ -1,28 +1,28 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import GameCard from "./GameCard";
 import GameStats from "./GameStats";
 import WinModal from "./WinModal";
 import { Difficulty, DIFFICULTY_CONFIG } from "./DifficultySelect";
 
-// Available emojis for the game - we'll pick from these based on difficulty
-const AVAILABLE_EMOJIS = ['🐶', '🐱', '🐼', '🦊', '🦁', '🐸', '🐵', '🐷', '🦄', '🐙', '🦋', '🌸'];
+// All the emojis we can use in the game
+const ALL_EMOJIS = ['🐶', '🐱', '🐼', '🦊', '🦁', '🐸', '🐵', '🐷', '🦄', '🐙', '🦋', '🌸'];
 
-// Card type definition
+// What a card looks like in our game
 interface Card {
-  id: number;
-  emoji: string;
-  isFlipped: boolean;
-  isMatched: boolean;
+  id: number;          // Unique number for this card
+  emoji: string;       // The emoji on this card
+  isFlipped: boolean;  // Is it face-up?
+  isMatched: boolean;  // Has it been matched?
 }
 
 interface GameBoardProps {
-  difficulty: Difficulty;
-  onBack: () => void;
+  difficulty: Difficulty;  // Easy, medium, or hard
+  onBack: () => void;      // Go back to difficulty select
 }
 
 /**
- * Fisher-Yates shuffle algorithm
- * Randomly shuffles an array in place
+ * Shuffle an array randomly (Fisher-Yates algorithm)
+ * This mixes up the cards so they're in random order
  */
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -35,36 +35,39 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 
 /**
  * GameBoard Component
- * Main game logic and rendering
+ * This is where the actual game happens
  */
 const GameBoard = ({ difficulty, onBack }: GameBoardProps) => {
+  // Get the settings for current difficulty
   const config = DIFFICULTY_CONFIG[difficulty];
   
-  // Game state
-  const [cards, setCards] = useState<Card[]>([]);
-  const [flippedCards, setFlippedCards] = useState<number[]>([]);
-  const [moves, setMoves] = useState(0);
-  const [matchedPairs, setMatchedPairs] = useState(0);
-  const [isChecking, setIsChecking] = useState(false);
-  const [gameWon, setGameWon] = useState(false);
-  const [time, setTime] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  // === GAME STATE ===
+  const [cards, setCards] = useState<Card[]>([]);              // All the cards
+  const [firstCard, setFirstCard] = useState<number | null>(null);   // ID of first flipped card
+  const [secondCard, setSecondCard] = useState<number | null>(null); // ID of second flipped card
+  const [moves, setMoves] = useState(0);                       // How many moves taken
+  const [matchedPairs, setMatchedPairs] = useState(0);         // How many pairs found
+  const [isLocked, setIsLocked] = useState(false);             // Prevent clicking during check
+  const [shakingCards, setShakingCards] = useState<number[]>([]); // Cards that are shaking
+  const [gameWon, setGameWon] = useState(false);               // Did player win?
+  const [time, setTime] = useState(0);                         // Timer in seconds
+  const [gameStarted, setGameStarted] = useState(false);       // Has player made first move?
 
   /**
-   * Initialize the game board
-   * Creates pairs of cards and shuffles them
+   * Set up a new game
+   * Creates cards, shuffles them, and resets everything
    */
-  const initializeGame = useCallback(() => {
-    // Pick emojis based on difficulty (number of pairs needed)
-    const gameEmojis = AVAILABLE_EMOJIS.slice(0, config.pairs);
+  const setupNewGame = () => {
+    // Pick the right number of emojis for this difficulty
+    const gameEmojis = ALL_EMOJIS.slice(0, config.pairs);
     
-    // Duplicate each emoji to create pairs
+    // Create pairs (each emoji appears twice)
     const cardPairs = [...gameEmojis, ...gameEmojis];
     
-    // Shuffle the cards
+    // Shuffle the cards randomly
     const shuffledCards = shuffleArray(cardPairs);
     
-    // Create card objects with unique IDs
+    // Create card objects with IDs
     const newCards: Card[] = shuffledCards.map((emoji, index) => ({
       id: index,
       emoji,
@@ -74,132 +77,153 @@ const GameBoard = ({ difficulty, onBack }: GameBoardProps) => {
 
     // Reset all game state
     setCards(newCards);
-    setFlippedCards([]);
+    setFirstCard(null);
+    setSecondCard(null);
     setMoves(0);
     setMatchedPairs(0);
-    setIsChecking(false);
+    setIsLocked(false);
+    setShakingCards([]);
     setGameWon(false);
     setTime(0);
-    setIsTimerRunning(false);
-  }, [config.pairs]);
+    setGameStarted(false);
+  };
 
-  // Initialize game on mount and difficulty change
+  // Set up game when component loads or difficulty changes
   useEffect(() => {
-    initializeGame();
-  }, [initializeGame]);
+    setupNewGame();
+  }, [difficulty]);
 
-  // Timer effect - runs every second when game is active
+  // Timer - counts up every second while playing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let timer: NodeJS.Timeout;
     
-    if (isTimerRunning && !gameWon) {
-      interval = setInterval(() => {
-        setTime((prev) => prev + 1);
+    if (gameStarted && !gameWon) {
+      timer = setInterval(() => {
+        setTime(t => t + 1);
       }, 1000);
     }
 
-    return () => clearInterval(interval);
-  }, [isTimerRunning, gameWon]);
+    // Clean up timer when component unmounts
+    return () => clearInterval(timer);
+  }, [gameStarted, gameWon]);
 
   // Check for win condition
   useEffect(() => {
     if (matchedPairs === config.pairs && matchedPairs > 0) {
+      // Player found all pairs - they win!
       setGameWon(true);
-      setIsTimerRunning(false);
     }
   }, [matchedPairs, config.pairs]);
 
   /**
-   * Handle card click
-   * Flips the card and checks for matches
+   * Check if the two flipped cards match
+   */
+  const checkForMatch = (firstId: number, secondId: number) => {
+    const card1 = cards.find(c => c.id === firstId);
+    const card2 = cards.find(c => c.id === secondId);
+
+    if (card1 && card2 && card1.emoji === card2.emoji) {
+      // === MATCH! ===
+      // Mark cards as matched after a short delay
+      setTimeout(() => {
+        setCards(prev => prev.map(card => 
+          card.id === firstId || card.id === secondId
+            ? { ...card, isMatched: true }
+            : card
+        ));
+        setMatchedPairs(prev => prev + 1);
+        
+        // Reset for next turn
+        setFirstCard(null);
+        setSecondCard(null);
+        setIsLocked(false);
+      }, 400);
+    } else {
+      // === NO MATCH ===
+      // Shake the cards to show mismatch
+      setShakingCards([firstId, secondId]);
+      
+      // Flip cards back after delay
+      setTimeout(() => {
+        setCards(prev => prev.map(card =>
+          card.id === firstId || card.id === secondId
+            ? { ...card, isFlipped: false }
+            : card
+        ));
+        setShakingCards([]);
+        
+        // Reset for next turn
+        setFirstCard(null);
+        setSecondCard(null);
+        setIsLocked(false);
+      }, 1000);
+    }
+  };
+
+  /**
+   * Handle when a card is clicked
    */
   const handleCardClick = (cardId: number) => {
-    // Ignore clicks while checking or if already 2 cards flipped
-    if (isChecking || flippedCards.length >= 2) return;
+    // Ignore clicks if locked or already have 2 cards flipped
+    if (isLocked) return;
     
-    // Start timer on first card flip
-    if (!isTimerRunning && moves === 0 && flippedCards.length === 0) {
-      setIsTimerRunning(true);
+    // Find the clicked card
+    const clickedCard = cards.find(c => c.id === cardId);
+    
+    // Ignore if card is already flipped or matched
+    if (!clickedCard || clickedCard.isFlipped || clickedCard.isMatched) return;
+    
+    // Ignore if clicking the same card that's already selected
+    if (cardId === firstCard) return;
+
+    // Start the timer on first card flip
+    if (!gameStarted) {
+      setGameStarted(true);
     }
 
-    // Find the clicked card
-    const clickedCard = cards.find((card) => card.id === cardId);
-    if (!clickedCard || clickedCard.isFlipped || clickedCard.isMatched) return;
+    // Flip this card face-up
+    setCards(prev => prev.map(card =>
+      card.id === cardId ? { ...card, isFlipped: true } : card
+    ));
 
-    // Flip the card
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === cardId ? { ...card, isFlipped: true } : card
-      )
-    );
-
-    const newFlippedCards = [...flippedCards, cardId];
-    setFlippedCards(newFlippedCards);
-
-    // If two cards are flipped, check for match
-    if (newFlippedCards.length === 2) {
-      setMoves((prev) => prev + 1);
-      setIsChecking(true);
-
-      const [firstId, secondId] = newFlippedCards;
-      const firstCard = cards.find((card) => card.id === firstId);
-      const secondCard = cards.find((card) => card.id === secondId);
-
-      if (firstCard && secondCard && firstCard.emoji === secondCard.emoji) {
-        // Match found! Mark cards as matched
-        setTimeout(() => {
-          setCards((prev) =>
-            prev.map((card) =>
-              card.id === firstId || card.id === secondId
-                ? { ...card, isMatched: true }
-                : card
-            )
-          );
-          setMatchedPairs((prev) => prev + 1);
-          setFlippedCards([]);
-          setIsChecking(false);
-        }, 300);
-      } else {
-        // No match - flip cards back after delay
-        setTimeout(() => {
-          setCards((prev) =>
-            prev.map((card) =>
-              card.id === firstId || card.id === secondId
-                ? { ...card, isFlipped: false }
-                : card
-            )
-          );
-          setFlippedCards([]);
-          setIsChecking(false);
-        }, 800);
-      }
+    if (firstCard === null) {
+      // This is the first card of the pair
+      setFirstCard(cardId);
+    } else {
+      // This is the second card - check for match
+      setSecondCard(cardId);
+      setIsLocked(true);  // Lock the board while checking
+      setMoves(prev => prev + 1);  // Count this as one move
+      
+      // Check if cards match
+      checkForMatch(firstCard, cardId);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      {/* Header */}
+      {/* Game Header */}
       <div className="text-center mb-6">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
           🧠 Memory Game
         </h1>
         <p className="text-muted-foreground">
-          {config.label} Mode • {config.description}
+          {config.label} Mode • Find all {config.pairs} pairs!
         </p>
       </div>
 
-      {/* Game Stats */}
+      {/* Stats Bar (moves, time, progress, restart) */}
       <GameStats
         moves={moves}
         time={time}
         matchedPairs={matchedPairs}
         difficulty={difficulty}
-        onRestart={initializeGame}
+        onRestart={setupNewGame}
       />
 
-      {/* Game Grid */}
+      {/* The Card Grid */}
       <div
-        className="grid gap-3 md:gap-4 w-full max-w-lg"
+        className="grid gap-2 md:gap-3 w-full max-w-md"
         style={{
           gridTemplateColumns: `repeat(${config.cols}, 1fr)`
         }}
@@ -210,8 +234,9 @@ const GameBoard = ({ difficulty, onBack }: GameBoardProps) => {
             emoji={card.emoji}
             isFlipped={card.isFlipped}
             isMatched={card.isMatched}
+            isShaking={shakingCards.includes(card.id)}
             onClick={() => handleCardClick(card.id)}
-            disabled={isChecking}
+            disabled={isLocked}
           />
         ))}
       </div>
@@ -219,18 +244,18 @@ const GameBoard = ({ difficulty, onBack }: GameBoardProps) => {
       {/* Back Button */}
       <button
         onClick={onBack}
-        className="mt-8 text-muted-foreground hover:text-foreground transition-colors"
+        className="mt-8 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors underline"
       >
         ← Change Difficulty
       </button>
 
-      {/* Win Modal */}
+      {/* Win Screen */}
       {gameWon && (
         <WinModal
           moves={moves}
           time={time}
           difficulty={difficulty}
-          onRestart={initializeGame}
+          onRestart={setupNewGame}
           onChangeDifficulty={onBack}
         />
       )}
