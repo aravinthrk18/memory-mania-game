@@ -270,3 +270,22 @@
   top: -10px;
   animation: confetti 3s ease-in-out forwards;
 }
+/* Author credit (top-right) */
+.author {
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  font-size: 13px;
+  opacity: 0.8;
+  z-index: 9999;
+}
+
+.author a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+}
+
+.author a:hover {
+  text-decoration: underline;
+}
+
