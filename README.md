@@ -1,73 +1,47 @@
-# Welcome to your Lovable project
+🧠 Memory Mania Game
 
-## Project info
+Memory Mania is a fun and interactive browser-based memory game designed to test and improve a player’s concentration and recall skills. The objective is simple: flip cards, remember their positions, and match identical pairs within the least number of moves.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🎯 Game Objective
 
-## How can I edit this code?
+Flip two cards at a time
 
-There are several ways of editing your application.
+Match identical card pairs
 
-**Use Lovable**
+Complete the game by matching all pairs
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Try to finish with minimum moves and maximum accuracy
 
-Changes made via Lovable will be committed automatically to this repo.
+🚀 Features
 
-**Use your preferred IDE**
+Interactive and responsive UI
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Card flip animation for better user experience
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Move counter to track performance
 
-Follow these steps:
+Simple game logic with instant feedback
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Works smoothly on desktop and mobile browsers
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+🛠️ Built With
 
-# Step 3: Install the necessary dependencies.
-npm i
+HTML – Structure of the game
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+CSS – Styling, layout, and animations
 
-**Edit a file directly in GitHub**
+JavaScript – Game logic and interactions
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+🕹️ How to Play
 
-**Use GitHub Codespaces**
+Open the game in your browser
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Click on any card to flip it
 
-## What technologies are used for this project?
+Flip another card to find its matching pair
 
-This project is built with:
+If both cards match, they stay open
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+If not, they flip back after a short delay
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Match all pairs to win the game 🎉
